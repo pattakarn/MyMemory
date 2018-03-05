@@ -17,58 +17,49 @@
         <!--android:layout_gravity="center"/>-->
 
 
-
-        <ProgressBar
-            android:id="@+id/progressBar1"
-            style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal"
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/rv"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/fab"
-            android:layout_alignParentLeft="true"
-            android:layout_margin="16dp"
-            android:layout_marginTop="28dp"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp" />
+            android:layout_height="match_parent"
+            android:layout_marginBottom="52dp"></android.support.v7.widget.RecyclerView>
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:layout_gravity="center"
-            android:layout_marginBottom="121dp"
-            app:backgroundTint="@color/colorPrimary"
-            app:srcCompat="@drawable/ic_mic_white" />
-
-        <TextView
-            android:id="@+id/textView1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_above="@+id/ll"
-            android:layout_marginBottom="16dp"
-            />
 
         <LinearLayout
             android:id="@+id/ll"
             android:layout_width="match_parent"
-            android:layout_height="42dp"
+            android:layout_height="50dp"
             android:layout_alignParentBottom="true"
             android:weightSum="10"
             android:orientation="horizontal"
-            android:layout_marginBottom="4dp">
+            android:paddingBottom="4dp"
+            android:paddingTop="4dp"
+            android:background="@color/colorPrimary">
+
+            <ImageView
+                android:id="@+id/iv_speak"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginRight="4dp"
+                android:layout_weight="1"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ic_mic_white"
+                android:tint="@color/white"
+                android:padding="4dp"/>
 
             <android.support.design.widget.TextInputEditText
                 android:id="@+id/et_input"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="9"
+                android:layout_weight="8"
                 android:layout_gravity="bottom"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
                 android:background="@drawable/shape"
-                android:hint="Hi!! may i help you ?"/>
+                android:hint="Hi!! may i help you ?"
+                android:textSize="14sp"
+                />
 
             <ImageView
                 android:id="@+id/iv_send"
@@ -78,8 +69,9 @@
                 android:layout_marginRight="4dp"
                 android:layout_weight="1"
                 android:adjustViewBounds="true"
-                android:tint="@color/colorPrimary"
-                android:src="@drawable/ic_send" />
+                android:tint="@color/white"
+                android:src="@drawable/ic_send"
+                android:padding="4dp"/>
 
         </LinearLayout>
 

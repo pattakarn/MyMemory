@@ -18,6 +18,8 @@ import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -31,6 +33,7 @@ import com.google.gson.JsonElement;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ai.api.AIDataService;
@@ -47,21 +50,22 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, RecognitionListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "aiDataService";
     private static final int REQUEST_RECORD_PERMISSION = 100;
-    private TextView returnedText;
-    private FloatingActionButton btnFab;
-    private ProgressBar progressBar;
+    private final static int REQUEST_VOICE_RECOGNITION = 10001;
     private ImageView ivSend;
+    private ImageView ivSpeak;
     private TextInputEditText etInput;
+    RecyclerView rv;
 
     private SpeechRecognizer speech = null;
     private Intent recognizerIntent;
     private String LOG_TAG = "VoiceRecognitionActivity";
     private Boolean statusSpeech = false;
     Context context;
+    List<Object> dataObj;
 
     AIDataService aiDataService;
     TextSpeechAPI textSpeech;
@@ -71,26 +75,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        returnedText = (TextView) findViewById(R.id.textView1);
-        progressBar = (ProgressBar) findViewById(R.id.progressBar1);
-        btnFab = (FloatingActionButton) findViewById(R.id.fab);
         etInput = (TextInputEditText) findViewById(R.id.et_input);
         ivSend = (ImageView) findViewById(R.id.iv_send);
+        ivSpeak = (ImageView) findViewById(R.id.iv_speak);
+        rv = (RecyclerView) findViewById(R.id.rv);
 
 
         context = MainActivity.this;
 
-        progressBar.setVisibility(View.INVISIBLE);
         textSpeech = TextSpeechAPI.getInstance(context);
-
-        createSpeech();
 
         final AIConfiguration config = new AIConfiguration("1deb6b8f7d514f9baf545a36a38e82a6",
                 AIConfiguration.SupportedLanguages.fromLanguageTag("TH"),
                 AIConfiguration.RecognitionEngine.System);
         aiDataService = new AIDataService(config);
 
-        btnFab.setOnClickListener(this);
 
         ivSend.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -102,6 +101,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
+        ivSpeak.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "th-TH");
+                startActivityForResult(intent, REQUEST_VOICE_RECOGNITION);
+            }
+        });
+
+        LinearLayoutManager llm = new LinearLayoutManager(this);
+        llm.setOrientation(LinearLayoutManager.VERTICAL);
+        rv.setLayoutManager(llm);
+        dataObj = new ArrayList<Object>();
+
+
+    }
+
+    private void setChat(String text) {
+        dataObj.add(text);
+        RV_Adapter_Chat adapterList = new RV_Adapter_Chat(dataObj);
+        rv.setAdapter(adapterList);
 
     }
 
@@ -140,70 +160,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-
-    @Override
-    public void onBeginningOfSpeech() {
-        Log.i(LOG_TAG, "onBeginningOfSpeech");
-        progressBar.setIndeterminate(false);
-        progressBar.setMax(10);
-    }
-
-    @Override
-    public void onBufferReceived(byte[] buffer) {
-        Log.i(LOG_TAG, "onBufferReceived: " + buffer);
-    }
-
-    @Override
-    public void onEndOfSpeech() {
-        Log.i(LOG_TAG, "onEndOfSpeech");
-        progressBar.setIndeterminate(true);
-        setChange(false);
-
-    }
-
-    @Override
-    public void onError(int errorCode) {
-        String errorMessage = getErrorText(errorCode);
-        Log.d(LOG_TAG, "FAILED " + errorMessage + " - " + errorCode);
-        returnedText.setText(errorMessage);
-        setChange(false);
-        setBtnOffSpeech();
-        speech.destroy();
-
-    }
-
-    @Override
-    public void onEvent(int arg0, Bundle arg1) {
-        Log.i(LOG_TAG, "onEvent");
-    }
-
-    @Override
-    public void onPartialResults(Bundle arg0) {
-        Log.i(LOG_TAG, "onPartialResults");
-    }
-
-    @Override
-    public void onReadyForSpeech(Bundle arg0) {
-        Log.i(LOG_TAG, "onReadyForSpeech");
-    }
-
-    @Override
-    public void onResults(Bundle results) {
-        Log.i(LOG_TAG, "onResults");
-        ArrayList<String> matches = results
-                .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-        String query = "";
-        for (String result : matches) {
-            query = result;
-            break;
-        }
-        setBtnOffSpeech();
-        callDialogFlow(query);
-    }
-
     private void callDialogFlow(String query) {
         final AIRequest aiRequest = new AIRequest();
         aiRequest.setQuery(query);
+        setChat(query);
 
         new AsyncTask<AIRequest, Void, AIResponse>() {
             @Override
@@ -250,8 +210,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     }
 
-
-                    returnedText.setText(speech);
+                    setChat(speech);
 
                 }
             }
@@ -276,12 +235,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         amanager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         amanager.setStreamMute(AudioManager.STREAM_RING, false);
         amanager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
-    }
-
-    @Override
-    public void onRmsChanged(float rmsdB) {
-        Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
-        progressBar.setProgress((int) rmsdB);
     }
 
     public static String getErrorText(int errorCode) {
@@ -325,9 +278,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.d("CheckChange", "+++++++++++++" + isChecked);
         if (isChecked) {
             statusSpeech = true;
-            createSpeech();
-            progressBar.setVisibility(View.VISIBLE);
-            progressBar.setIndeterminate(true);
             ActivityCompat.requestPermissions
                     (MainActivity.this,
                             new String[]{Manifest.permission.RECORD_AUDIO},
@@ -335,48 +285,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                    speech.startListening(recognizerIntent);
         } else {
             statusSpeech = false;
-            progressBar.setIndeterminate(false);
-            progressBar.setVisibility(View.INVISIBLE);
             speech.stopListening();
 
         }
     }
 
-    public void createSpeech() {
-        speech = SpeechRecognizer.createSpeechRecognizer(this);
-        Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(this));
-        speech.setRecognitionListener(this);
-        recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
-                "en");
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "th-TH");
-    }
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.fab:
-                setBtnOnSpeech();
-                break;
         }
 
-    }
-
-    public void setBtnOnSpeech(){
-        setChange(true);
-        btnFab.setImageResource(R.drawable.ic_stop_white);
-        btnFab.setBackgroundTintList(ColorStateList.valueOf(Color.RED));
-        Log.i(LOG_TAG, "setBtnOnSpeech: ========================================");
-    }
-
-    public void setBtnOffSpeech(){
-        setChange(false);
-        btnFab.setImageResource(R.drawable.ic_mic_white);
-        btnFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorPrimary)));
-        Log.i(LOG_TAG, "setBtnOffSpeech: ========================================");
     }
 
 
@@ -384,5 +302,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_VOICE_RECOGNITION &&
+                resultCode == RESULT_OK &&
+                data != null) {
+            ArrayList<String> resultList = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            callDialogFlow(resultList.get(0));
+
+        }
+    }
+
 
 }
